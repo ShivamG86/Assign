@@ -142,13 +142,57 @@ app.get("/purchases", async function (req, res) {
     try {
         const { shop, product, sort } = req.query;
 
+        const shopIdMap = {
+            st1: 1,
+            st2: 2,
+            st3: 3,
+            st4: 4,
+            st5: 5,
+            st6: 6,
+
+        };
+        const productIdMap= {
+            pr1: 1,
+            pr2: 2,
+            pr3: 3,
+            pr4: 4,
+            pr5: 5,
+            pr6: 6,
+            pr7: 7,
+            pr8: 8,
+            pr9: 9,
+            pr10: 10,
+            pr11: 11,
+
+        };
+
         let query = "SELECT * FROM purchases";
 
         if (shop || product) {
             query += " WHERE";
-            if (shop) query += ` shopId IN (${shop})`;
+
+            if (shop) {
+                const numericShopId = shopIdMap[shop];
+                if (numericShopId) {
+                    query += ` shopId = ${numericShopId}`;
+                } else {
+                    return res.status(400).send("Invalid shop identifier");
+                }
+            }
+
             if (shop && product) query += " AND";
-            if (product) query += ` productId = ${product}`;
+            if (product) {
+                const productIdentifiers = product.split(',');
+                const numericProductIds = productIdentifiers.map(pr => productIdMap[pr]);
+
+                const validNumericProductIds = numericProductIds.filter(Boolean);
+
+                if (validNumericProductIds.length > 0) {
+                    query += ` productId IN (${validNumericProductIds.join(',')})`;
+                } else {
+                    return res.status(400).send("Invalid product identifier(s)");
+                }
+            }
         }
 
         if (sort) {
@@ -173,6 +217,7 @@ app.get("/purchases", async function (req, res) {
         res.status(500).send(error.message);
     }
 });
+
 
 app.post("/purchases", async function (req, res) {
     try {
